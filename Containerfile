@@ -19,13 +19,22 @@ RUN sed -i \
     echo 'LOGO=simracinghub-os' >> /usr/lib/os-release
 
 # --- Software packages ------------------------------------------------------
+# Steam, Proton and GE-Proton already ship with Bazzite.
+#   wine + winetricks + cabextract -> groundwork for SimHub
+#   obs-studio                     -> recording & streaming
+#   firefox                        -> web browser
+#   nextcloud-client               -> Nextcloud file sync
+#   freecad                        -> parametric 3D CAD
+#   gimp                           -> image editing
 RUN dnf5 install -y \
         wine \
         winetricks \
         cabextract \
         obs-studio \
         firefox \
-        nextcloud-client && \
+        nextcloud-client \
+        freecad \
+        gimp && \
     dnf5 clean all
 
 # --- SimHub helper ----------------------------------------------------------
@@ -43,15 +52,15 @@ RUN chmod +x /usr/bin/simhub-setup && \
       > /usr/share/applications/simracinghub-simhub-setup.desktop
 
 # --- Default Flatpaks (installed on first boot) ----------------------------
-# Betterbird (email) and LocalSend are not in Fedora's repos but are on
-# Flathub. Flatpaks live under /var, which is not part of the image, so a
-# one-shot service installs them the first time the system boots. It only
-# marks itself done on success, so it retries if there is no network yet.
+# Betterbird (email), LocalSend and OrcaSlicer are not in Fedora's repos but
+# are on Flathub. Flatpaks live under /var, which is not part of the image,
+# so a one-shot service installs them the first time the system boots. It
+# only marks itself done on success, so it retries if there is no network yet.
 RUN printf '%s\n' \
       '#!/usr/bin/bash' \
       'set -euo pipefail' \
       'flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo' \
-      'flatpak install -y --noninteractive flathub eu.betterbird.Betterbird org.localsend.localsend_app' \
+      'flatpak install -y --noninteractive flathub eu.betterbird.Betterbird org.localsend.localsend_app com.orcaslicer.OrcaSlicer' \
       'mkdir -p /var/lib/simracinghub-os' \
       'touch /var/lib/simracinghub-os/flatpaks-installed' \
       > /usr/libexec/simracinghub-install-flatpaks && \
@@ -70,39 +79,4 @@ RUN printf '%s\n' \
       '' \
       '[Install]' \
       'WantedBy=multi-user.target' \
-      > /usr/lib/systemd/system/simracinghub-flatpaks.service && \
-    systemctl enable simracinghub-flatpaks.service
-
-# --- Branding: wallpaper & logo --------------------------------------------
-COPY branding/simracinghub-os-wallpaper.svg /usr/share/backgrounds/simracinghub-os/simracinghub-os.svg
-COPY branding/simracinghub-os-logo.svg /usr/share/icons/hicolor/scalable/apps/simracinghub-os.svg
-RUN mkdir -p /usr/share/gnome-background-properties && \
-    printf '%s\n' \
-      '[org.gnome.desktop.background]' \
-      'picture-uri="file:///usr/share/backgrounds/simracinghub-os/simracinghub-os.svg"' \
-      'picture-uri-dark="file:///usr/share/backgrounds/simracinghub-os/simracinghub-os.svg"' \
-      'picture-options="zoom"' \
-      'primary-color="#0a0a0f"' \
-      '' \
-      '[org.gnome.desktop.screensaver]' \
-      'picture-uri="file:///usr/share/backgrounds/simracinghub-os/simracinghub-os.svg"' \
-      'primary-color="#0a0a0f"' \
-      '' \
-      '[org.gnome.login-screen]' \
-      'logo="/usr/share/icons/hicolor/scalable/apps/simracinghub-os.svg"' \
-      > /usr/share/glib-2.0/schemas/zz1-simracinghub-os.gschema.override && \
-    glib-compile-schemas /usr/share/glib-2.0/schemas/ && \
-    printf '%s\n' \
-      '<?xml version="1.0" encoding="UTF-8"?>' \
-      '<!DOCTYPE wallpapers SYSTEM "gnome-wp-list.dtd">' \
-      '<wallpapers>' \
-      '  <wallpaper deleted="false">' \
-      '    <name>SimRacing Hub OS</name>' \
-      '    <filename>/usr/share/backgrounds/simracinghub-os/simracinghub-os.svg</filename>' \
-      '    <options>zoom</options>' \
-      '    <pcolor>#0a0a0f</pcolor>' \
-      '    <scolor>#0a0a0f</scolor>' \
-      '  </wallpaper>' \
-      '</wallpapers>' \
-      > /usr/share/gnome-background-properties/simracinghub-os.xml && \
-    ostree container commit
+      > /us
