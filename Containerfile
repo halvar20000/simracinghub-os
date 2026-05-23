@@ -19,11 +19,6 @@ RUN sed -i \
     echo 'LOGO=simracinghub-os' >> /usr/lib/os-release
 
 # --- Software packages ------------------------------------------------------
-# Steam, Proton and GE-Proton already ship with Bazzite.
-#   wine + winetricks + cabextract -> groundwork for SimHub
-#   obs-studio                     -> recording & streaming
-#   firefox                        -> web browser
-#   nextcloud-client               -> Nextcloud file sync
 RUN dnf5 install -y \
         wine \
         winetricks \
@@ -46,6 +41,37 @@ RUN chmod +x /usr/bin/simhub-setup && \
       'Terminal=true' \
       'Categories=Game;Settings;' \
       > /usr/share/applications/simracinghub-simhub-setup.desktop
+
+# --- Default Flatpaks (installed on first boot) ----------------------------
+# Betterbird (email) and LocalSend are not in Fedora's repos but are on
+# Flathub. Flatpaks live under /var, which is not part of the image, so a
+# one-shot service installs them the first time the system boots. It only
+# marks itself done on success, so it retries if there is no network yet.
+RUN printf '%s\n' \
+      '#!/usr/bin/bash' \
+      'set -euo pipefail' \
+      'flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo' \
+      'flatpak install -y --noninteractive flathub eu.betterbird.Betterbird org.localsend.localsend_app' \
+      'mkdir -p /var/lib/simracinghub-os' \
+      'touch /var/lib/simracinghub-os/flatpaks-installed' \
+      > /usr/libexec/simracinghub-install-flatpaks && \
+    chmod +x /usr/libexec/simracinghub-install-flatpaks && \
+    printf '%s\n' \
+      '[Unit]' \
+      'Description=Install SimRacing Hub OS default Flatpaks' \
+      'After=network-online.target' \
+      'Wants=network-online.target' \
+      'ConditionPathExists=!/var/lib/simracinghub-os/flatpaks-installed' \
+      '' \
+      '[Service]' \
+      'Type=oneshot' \
+      'ExecStart=/usr/libexec/simracinghub-install-flatpaks' \
+      'RemainAfterExit=yes' \
+      '' \
+      '[Install]' \
+      'WantedBy=multi-user.target' \
+      > /usr/lib/systemd/system/simracinghub-flatpaks.service && \
+    systemctl enable simracinghub-flatpaks.service
 
 # --- Branding: wallpaper & logo --------------------------------------------
 COPY branding/simracinghub-os-wallpaper.svg /usr/share/backgrounds/simracinghub-os/simracinghub-os.svg
