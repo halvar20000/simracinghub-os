@@ -1,0 +1,65 @@
+name: Build SimRacing Hub OS
+
+# When to build:
+#   - on every push to main
+#   - on pull requests (build only, no publish)
+#   - weekly, to pull in upstream Bazzite / Proton / security updates
+#   - manually, from the Actions tab
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 5 * * 0"   # Sundays, 05:00 UTC
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: simracinghub-os
+  IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Bazzite-derived images are large; free up runner disk space first.
+      - name: Free up disk space
+        uses: ublue-os/remove-unwanted-software@v7
+
+      - name: Generate image tags
+        id: tags
+        run: echo "date=$(date +%Y%m%d)" >> "$GITHUB_OUTPUT"
+
+      - name: Build image
+        id: build
+        uses: redhat-actions/buildah-build@v2
+        with:
+          containerfiles: ./Containerfile
+          image: ${{ env.IMAGE_NAME }}
+          tags: latest ${{ steps.tags.outputs.date }}
+          oci: true
+
+      # Publishing is skipped on pull requests — those are build-only checks.
+      - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: redhat-actions/podman-login@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push image to registry
+        if: github.event_name != 'pull_request'
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          image: ${{ env.IMAGE_NAME }}
+          tags: latest ${{ steps.tags.outputs.date }}
+          registry: ${{ env.IMAGE_REGISTRY }}
