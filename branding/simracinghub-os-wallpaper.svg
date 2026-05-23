@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#090910"/>
+      <stop offset="60%" stop-color="#0f0f18"/>
+      <stop offset="100%" stop-color="#15151f"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ff6b35" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#ff6b35" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ff6b35"/>
+      <stop offset="100%" stop-color="#e63946"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#bg)"/>
+
+  <!-- soft glow behind the wordmark -->
+  <ellipse cx="960" cy="470" rx="1050" ry="620" fill="url(#glow)"/>
+
+  <!-- racing line along the lower third -->
+  <path d="M -120 980 C 380 980 720 770 1120 770 C 1520 770 1720 900 2120 840"
+        fill="none" stroke="#1b1b27" stroke-width="130" stroke-linecap="round"/>
+  <path d="M -120 980 C 380 980 720 770 1120 770 C 1520 770 1720 900 2120 840"
+        fill="none" stroke="url(#accent)" stroke-width="5" stroke-linecap="round" opacity="0.8"/>
+
+  <!-- speed-gauge emblem -->
+  <g fill="none" stroke-linecap="round">
+    <path d="M 909.8 410.2 A 71 71 0 1 1 1010.2 410.2" stroke="#2a2a38" stroke-width="14"/>
+    <path d="M 909.8 410.2 A 71 71 0 1 1 1010.2 410.2" stroke="url(#accent)" stroke-width="10" stroke-dasharray="235 420"/>
+    <line x1="960" y1="360" x2="1007" y2="315" stroke="url(#accent)" stroke-width="7"/>
+  </g>
+  <circle cx="960" cy="360" r="9" fill="#f4f4f7"/>
+
+  <!-- wordmark -->
+  <g text-anchor="middle" font-family="'Rajdhani','Inter','DejaVu Sans',sans-serif">
+    <text x="960" y="585" font-size="138" font-weight="700" fill="#f4f4f7" letter-spacing="2">SimRacing Hub</text>
+    <line x1="772" y1="623" x2="1148" y2="623" stroke="#33333f" stroke-width="2"/>
+    <circle cx="772" cy="623" r="4.5" fill="#ff6b35"/>
+    <circle cx="1148" cy="623" r="4.5" fill="#e63946"/>
+    <text x="960" y="672" font-size="44" font-weight="600" fill="#ff7a45" letter-spacing="24">OPERATING SYSTEM</text>
+  </g>
+</svg>
