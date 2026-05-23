@@ -10,22 +10,30 @@ LABEL org.opencontainers.image.description="A Linux distribution for sim racing,
 LABEL org.opencontainers.image.vendor="SimRacing Hub"
 LABEL org.opencontainers.image.source="https://github.com/halvar20000/simracinghub-os"
 
-# --- Phase 2: identity ------------------------------------------------------
+# --- Identity ---------------------------------------------------------------
 RUN sed -i \
       -e 's/^NAME=.*/NAME="SimRacing Hub OS"/' \
       -e 's/^PRETTY_NAME=.*/PRETTY_NAME="SimRacing Hub OS"/' \
-      /usr/lib/os-release
+      /usr/lib/os-release && \
+    sed -i '/^LOGO=/d' /usr/lib/os-release && \
+    echo 'LOGO=simracinghub-os' >> /usr/lib/os-release
 
-# --- Phase 3: sim racing software ------------------------------------------
+# --- Software packages ------------------------------------------------------
 # Steam, Proton and GE-Proton already ship with Bazzite.
+#   wine + winetricks + cabextract -> groundwork for SimHub
+#   obs-studio                     -> recording & streaming
+#   firefox                        -> web browser
+#   nextcloud-client               -> Nextcloud file sync
 RUN dnf5 install -y \
         wine \
         winetricks \
         cabextract \
-        obs-studio && \
+        obs-studio \
+        firefox \
+        nextcloud-client && \
     dnf5 clean all
 
-# --- Phase 4: SimHub helper -------------------------------------------------
+# --- SimHub helper ----------------------------------------------------------
 COPY scripts/simhub-setup.sh /usr/bin/simhub-setup
 RUN chmod +x /usr/bin/simhub-setup && \
     printf '%s\n' \
@@ -39,9 +47,9 @@ RUN chmod +x /usr/bin/simhub-setup && \
       'Categories=Game;Settings;' \
       > /usr/share/applications/simracinghub-simhub-setup.desktop
 
-# --- Phase 6: branding ------------------------------------------------------
-# Ship the SimRacing Hub OS wallpaper and make it the default background.
+# --- Branding: wallpaper & logo --------------------------------------------
 COPY branding/simracinghub-os-wallpaper.svg /usr/share/backgrounds/simracinghub-os/simracinghub-os.svg
+COPY branding/simracinghub-os-logo.svg /usr/share/icons/hicolor/scalable/apps/simracinghub-os.svg
 RUN mkdir -p /usr/share/gnome-background-properties && \
     printf '%s\n' \
       '[org.gnome.desktop.background]' \
@@ -53,6 +61,9 @@ RUN mkdir -p /usr/share/gnome-background-properties && \
       '[org.gnome.desktop.screensaver]' \
       'picture-uri="file:///usr/share/backgrounds/simracinghub-os/simracinghub-os.svg"' \
       'primary-color="#0a0a0f"' \
+      '' \
+      '[org.gnome.login-screen]' \
+      'logo="/usr/share/icons/hicolor/scalable/apps/simracinghub-os.svg"' \
       > /usr/share/glib-2.0/schemas/zz1-simracinghub-os.gschema.override && \
     glib-compile-schemas /usr/share/glib-2.0/schemas/ && \
     printf '%s\n' \
