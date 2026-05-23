@@ -1,9 +1,9 @@
 # SimRacing Hub OS — container image definition
-# A Linux distribution for sim racing, built on Bazzite (GNOME).
+# A Linux distribution for sim racing, built on Bazzite (GNOME, Nvidia).
 #
 # Built automatically by GitHub Actions. See .github/workflows/.
 
-FROM ghcr.io/ublue-os/bazzite-gnome:stable
+FROM ghcr.io/ublue-os/bazzite-gnome-nvidia-open:stable
 
 LABEL org.opencontainers.image.title="SimRacing Hub OS"
 LABEL org.opencontainers.image.description="A Linux distribution for sim racing, built on Bazzite."
@@ -20,20 +20,18 @@ RUN sed -i \
 
 # --- Software packages ------------------------------------------------------
 # Steam, Proton and GE-Proton already ship with Bazzite.
-#   wine + winetricks + cabextract -> groundwork for SimHub
-#   obs-studio                     -> recording & streaming
-#   firefox                        -> web browser
-#   nextcloud-client               -> Nextcloud file sync
-#   freecad                        -> parametric 3D CAD
-#   gimp                           -> image editing
+#   wine + winetricks -> groundwork for SimHub (cabextract is already in base)
+#   obs-studio        -> recording & streaming
+#   firefox           -> web browser
+#   nextcloud-client  -> Nextcloud file sync
+#   gimp              -> image editing
+# FreeCAD is not in Fedora's repos here, so it ships as a Flatpak (see below).
 RUN dnf5 install -y \
         wine \
         winetricks \
-        cabextract \
         obs-studio \
         firefox \
         nextcloud-client \
-        freecad \
         gimp && \
     dnf5 clean all
 
@@ -66,15 +64,15 @@ RUN chmod +x /usr/bin/claude-desktop-setup && \
       > /usr/share/applications/simracinghub-claude-desktop-setup.desktop
 
 # --- Default Flatpaks (installed on first boot) ----------------------------
-# Betterbird (email), LocalSend and OrcaSlicer are not in Fedora's repos but
-# are on Flathub. Flatpaks live under /var, which is not part of the image,
-# so a one-shot service installs them the first time the system boots. It
-# only marks itself done on success, so it retries if there is no network yet.
+# Betterbird (email), LocalSend, OrcaSlicer and FreeCAD are not in Fedora's
+# repos but are on Flathub. Flatpaks live under /var, which is not part of the
+# image, so a one-shot service installs them the first time the system boots.
+# It only marks itself done on success, so it retries if there is no network yet.
 RUN printf '%s\n' \
       '#!/usr/bin/bash' \
       'set -euo pipefail' \
       'flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo' \
-      'flatpak install -y --noninteractive flathub eu.betterbird.Betterbird org.localsend.localsend_app com.orcaslicer.OrcaSlicer' \
+      'flatpak install -y --noninteractive flathub eu.betterbird.Betterbird org.localsend.localsend_app com.orcaslicer.OrcaSlicer org.freecad.FreeCAD' \
       'mkdir -p /var/lib/simracinghub-os' \
       'touch /var/lib/simracinghub-os/flatpaks-installed' \
       > /usr/libexec/simracinghub-install-flatpaks && \
